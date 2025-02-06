@@ -1,6 +1,9 @@
 
 set IMGUI="C:\data\GitHub\ViennaVulkanEngine\extern\imgui"
 echo %IMGUI%
+set VULKAN=%VULKAN_SDK%
+rem set VULKAN="C:\VulkanSDK\
+echo %VULKAN%
 
 cl 28_model_loading.cpp ^
     %IMGUI%/imgui.cpp ^
@@ -12,10 +15,10 @@ cl 28_model_loading.cpp ^
     %IMGUI%/imgui_widgets.cpp ^
     /EHsc /std:c++20  /DEBUG /Zi /Istb /I%IMGUI% ^
     /D IMGUI_IMPL_VULKAN_NO_PROTOTYPES ^
-    /I%VULKAN_SDK%\include ^
-    /I%VULKAN_SDK%\include\SDL2 ^
-    /I%VULKAN_SDK%\include\volk ^
-    %VULKAN_SDK%\Lib\SDL2.lib ^
-    %VULKAN_SDK%\Lib\volk.lib ^
+    /I%VULKAN%\include ^
+    /I%VULKAN%\include\SDL2 ^
+    /I%VULKAN%\include\volk ^
+    %VULKAN%\Lib\SDL2.lib ^
+    %VULKAN%\Lib\volk.lib ^
     /link /SUBSYSTEM:CONSOLE /OUT:28_model_loading.exe
 

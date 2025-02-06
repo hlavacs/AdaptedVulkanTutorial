@@ -20,6 +20,7 @@ else()
 endif()
 
 find_package(Vulkan REQUIRED)
+set(VULKAN $ENV{VULKAN_SDK}) #set to Vulkan SDK
 
 set(BUILD ${PROJECT_SOURCE_DIR}/build)  # engine include directory
 set(INCLUDE ${PROJECT_SOURCE_DIR}/include)  # engine include directory
@@ -43,14 +44,14 @@ set(HEADERS )
 add_executable(${TARGET} ${SOURCE} ${HEADERS})
 
 target_include_directories(${TARGET} PUBLIC stb)
-target_include_directories(${TARGET} PUBLIC $ENV{VULKAN_SDK}/Include)
-target_include_directories(${TARGET} PUBLIC $ENV{VULKAN_SDK}/Include/SDL2)
-target_include_directories(${TARGET} PUBLIC $ENV{VULKAN_SDK}/Include/Volk)
-target_include_directories(${TARGET} PUBLIC $ENV{VULKAN_SDK}/Include/glm)
-target_include_directories(${TARGET} PUBLIC $ENV{VULKAN_SDK}/Include/vma)
+target_include_directories(${TARGET} PUBLIC ${VULKAN}/Include)
+target_include_directories(${TARGET} PUBLIC ${VULKAN}/Include/SDL2)
+target_include_directories(${TARGET} PUBLIC ${VULKAN}/Include/Volk)
+target_include_directories(${TARGET} PUBLIC ${VULKAN}/Include/glm)
+target_include_directories(${TARGET} PUBLIC ${VULKAN}/Include/vma)
 target_include_directories(${TARGET} PUBLIC ${IMGUI})
 target_include_directories(${TARGET} PUBLIC ${IMGUI}/backends)
 
-target_link_libraries (${TARGET} PUBLIC $ENV{VULKAN_SDK}/lib/SDL2.lib)
-target_link_libraries (${TARGET} PUBLIC $ENV{VULKAN_SDK}/lib/volk.lib)
+target_link_libraries (${TARGET} PUBLIC ${VULKAN}/lib/SDL2.lib)
+target_link_libraries (${TARGET} PUBLIC ${VULKAN}/lib/volk.lib)
 
