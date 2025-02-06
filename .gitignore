@@ -3,3 +3,4 @@
 *.pdb
 *.ini
 *.exe
+build/
