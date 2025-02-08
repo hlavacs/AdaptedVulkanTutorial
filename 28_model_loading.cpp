@@ -322,7 +322,7 @@ private:
 
 	void createObject( VkPhysicalDevice physicalDevice, VkDevice device, VmaAllocator vmaAllocator, 
 			VkQueue graphicsQueue, VkCommandPool commandPool, VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorSetLayout,
-			glm::mat4&& model, std::string modelPath, std::string texturePath) {
+			glm::mat4&& model, std::string modelPath, std::string texturePath, std::vector<Object>& objects) {
 
 		Object object{{model}};
 		createTextureImage(physicalDevice, device, vmaAllocator, graphicsQueue, commandPool, texturePath, object.m_texture);
@@ -333,7 +333,7 @@ private:
         createIndexBuffer( physicalDevice, device, vmaAllocator, graphicsQueue, commandPool, object.m_geometry);
         createUniformBuffers(physicalDevice, device, vmaAllocator, object.m_uniformBuffers);
         createDescriptorSets(device, object.m_texture, descriptorSetLayout, object.m_uniformBuffers, descriptorPool, object.m_descriptorSets);
-		m_objects.push_back(object);
+		objects.push_back(object);
 	}
 
     void initVulkan() {
@@ -354,7 +354,7 @@ private:
         createDescriptorPool(m_device, m_descriptorPool);
 
 		createObject(m_physicalDevice, m_device, m_vmaAllocator, m_graphicsQueue, m_commandPool, 
-			m_descriptorPool, m_descriptorSetLayout, glm::mat4{1.0f}, m_MODEL_PATH, m_TEXTURE_PATH);
+			m_descriptorPool, m_descriptorSetLayout, glm::mat4{1.0f}, m_MODEL_PATH, m_TEXTURE_PATH, m_objects);
 	
 		createCommandBuffers(m_device, m_commandPool, m_commandBuffers);
         createSyncObjects(m_device, m_syncObjects);
