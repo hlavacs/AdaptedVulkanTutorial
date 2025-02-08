@@ -323,6 +323,10 @@ private:
 
     void initVulkan() {
 		m_objects.resize(1);
+
+		m_objects[0].m_ubo.model = glm::mat4{1}; //glm::rotate(glm::mat4(1.0f), 0 * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		m_objects[0].m_ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
         createInstance(&m_instance, m_validationLayers);
         setupDebugMessenger(m_instance);
         createSurface(m_instance, m_surface);
@@ -1587,19 +1591,17 @@ private:
 
     void updateUniformBuffer(uint32_t currentImage, SwapChain& swapChain, std::vector<Object>& objects ) { 
         static auto startTime = std::chrono::high_resolution_clock::now();
-
         auto currentTime = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+        float dt = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+		startTime = currentTime;
 
 		for( auto& object : objects ) {
-	        UniformBufferObject ubo{};
-	        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	        ubo.proj = glm::perspective(glm::radians(45.0f)
-	            , swapChain.m_swapChainExtent.width / (float) swapChain.m_swapChainExtent.height, 0.1f, 10.0f);
-	        ubo.proj[1][1] *= -1;
+	        object.m_ubo.model = glm::rotate(object.m_ubo.model, dt * 1.0f * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	        object.m_ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+			object.m_ubo.proj = glm::perspective(glm::radians(45.0f), swapChain.m_swapChainExtent.width / (float) swapChain.m_swapChainExtent.height, 0.1f, 10.0f);
+	        object.m_ubo.proj[1][1] *= -1;
 
-	        memcpy(object.m_uniformBuffers.m_uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+	        memcpy(object.m_uniformBuffers.m_uniformBuffersMapped[currentImage], &object.m_ubo, sizeof(object.m_ubo));
 		}
     }
 
@@ -1627,9 +1629,7 @@ private:
         vkResetFences(device, 1, &syncObjects.m_inFlightFences[currentFrame]);
 
         vkResetCommandBuffer(commandBuffers[currentFrame],  0);
-        recordCommandBuffer(commandBuffers[currentFrame], imageIndex, swapChain, renderPass, graphicsPipeline, 
-			objects, //[0].m_geometry, objects[0].m_descriptorSets, 
-			currentFrame);
+        recordCommandBuffer(commandBuffers[currentFrame], imageIndex, swapChain, renderPass, graphicsPipeline, objects, currentFrame);
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
