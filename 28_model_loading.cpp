@@ -244,13 +244,15 @@ private:
         VkImageView     m_depthImageView;
     } m_depthImage;
 
+	//The texture of an object
     struct Texture {
         VkImage         m_textureImage;
         VmaAllocation   m_textureImageAllocation;
         VkImageView     m_textureImageView;
         VkSampler       m_textureSampler;
-    } m_texture;
+    };
 
+	//Mesh of an object
     struct Geometry {
         std::vector<Vertex>     m_vertices;
         std::vector<uint32_t>   m_indices;
@@ -258,16 +260,27 @@ private:
         VmaAllocation           m_vertexBufferAllocation;
         VkBuffer                m_indexBuffer;
         VmaAllocation           m_indexBufferAllocation;
-    } m_geometry;
+    };
 
+	//Uniform buffers of an object
     struct UniformBuffers {
         std::vector<VkBuffer>       m_uniformBuffers;
         std::vector<VmaAllocation>  m_uniformBuffersAllocation;
         std::vector<void*>          m_uniformBuffersMapped;
-    } m_uniformBuffers;
+    };
 
     VkDescriptorPool m_descriptorPool;
-    std::vector<VkDescriptorSet> m_descriptorSets;
+
+	//This holds all information an object with texture needs!	
+	struct Object {
+		Texture m_texture;
+		Geometry m_geometry;
+		UniformBufferObject m_ubo; //holds model, view and proj matrix
+		UniformBuffers m_uniformBuffers;
+		std::vector<VkDescriptorSet> m_descriptorSets;
+	};
+
+	Object m_object; 
 
     VkCommandPool m_commandPool;
     std::vector<VkCommandBuffer> m_commandBuffers;
@@ -323,15 +336,15 @@ private:
         createCommandPool(m_surface, m_physicalDevice, m_device, m_commandPool);
         createDepthResources(m_physicalDevice, m_device, m_vmaAllocator, m_swapChain, m_depthImage);
         createFramebuffers(m_device, m_swapChain, m_depthImage, m_renderPass);
-        createTextureImage(m_physicalDevice, m_device, m_vmaAllocator, m_graphicsQueue, m_commandPool, m_TEXTURE_PATH, m_texture);
-        createTextureImageView(m_device, m_texture);
-        createTextureSampler(m_physicalDevice, m_device, m_texture);
-        loadModel(m_geometry, m_MODEL_PATH);
-        createVertexBuffer(m_physicalDevice, m_device, m_vmaAllocator, m_graphicsQueue, m_commandPool, m_geometry);
-        createIndexBuffer( m_physicalDevice, m_device, m_vmaAllocator, m_graphicsQueue, m_commandPool, m_geometry);
-        createUniformBuffers(m_physicalDevice, m_device, m_vmaAllocator, m_uniformBuffers);
+        createTextureImage(m_physicalDevice, m_device, m_vmaAllocator, m_graphicsQueue, m_commandPool, m_TEXTURE_PATH, m_object.m_texture);
+        createTextureImageView(m_device, m_object.m_texture);
+        createTextureSampler(m_physicalDevice, m_device, m_object.m_texture);
+        loadModel(m_object.m_geometry, m_MODEL_PATH);
+        createVertexBuffer(m_physicalDevice, m_device, m_vmaAllocator, m_graphicsQueue, m_commandPool, m_object.m_geometry);
+        createIndexBuffer( m_physicalDevice, m_device, m_vmaAllocator, m_graphicsQueue, m_commandPool, m_object.m_geometry);
+        createUniformBuffers(m_physicalDevice, m_device, m_vmaAllocator, m_object.m_uniformBuffers);
         createDescriptorPool(m_device, m_descriptorPool);
-        createDescriptorSets(m_device, m_texture, m_descriptorSetLayout, m_uniformBuffers, m_descriptorPool, m_descriptorSets);
+        createDescriptorSets(m_device, m_object.m_texture, m_descriptorSetLayout, m_object.m_uniformBuffers, m_descriptorPool, m_object.m_descriptorSets);
         createCommandBuffers(m_device, m_commandPool, m_commandBuffers);
         createSyncObjects(m_device, m_syncObjects);
         setupImgui(m_instance, m_physicalDevice, m_queueFamilies, m_device, m_graphicsQueue, m_commandPool
@@ -376,8 +389,8 @@ private:
 
                 drawFrame(m_sdlWindow, m_surface, m_physicalDevice, m_device, m_vmaAllocator
                     , m_graphicsQueue, m_presentQueue, m_swapChain, m_depthImage
-                    , m_renderPass, m_graphicsPipeline, m_geometry, m_commandBuffers
-                    , m_uniformBuffers, m_descriptorSets, m_syncObjects, m_currentFrame
+                    , m_renderPass, m_graphicsPipeline, m_object.m_geometry, m_commandBuffers
+                    , m_object.m_uniformBuffers, m_object.m_descriptorSets, m_syncObjects, m_currentFrame
                     , m_framebufferResized);
             }
         }
@@ -414,21 +427,21 @@ private:
 
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            destroyBuffer(m_device, m_vmaAllocator, m_uniformBuffers.m_uniformBuffers[i], m_uniformBuffers.m_uniformBuffersAllocation[i]);
+            destroyBuffer(m_device, m_vmaAllocator, m_object.m_uniformBuffers.m_uniformBuffers[i], m_object.m_uniformBuffers.m_uniformBuffersAllocation[i]);
         }
 
         vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
 
-        vkDestroySampler(m_device, m_texture.m_textureSampler, nullptr);
-        vkDestroyImageView(m_device, m_texture.m_textureImageView, nullptr);
+        vkDestroySampler(m_device, m_object.m_texture.m_textureSampler, nullptr);
+        vkDestroyImageView(m_device, m_object.m_texture.m_textureImageView, nullptr);
 
-        destroyImage(m_device, m_vmaAllocator, m_texture.m_textureImage, m_texture.m_textureImageAllocation);
+        destroyImage(m_device, m_vmaAllocator, m_object.m_texture.m_textureImage, m_object.m_texture.m_textureImageAllocation);
 
         vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayout, nullptr);
 
-        destroyBuffer(m_device, m_vmaAllocator, m_geometry.m_indexBuffer, m_geometry.m_indexBufferAllocation);
+        destroyBuffer(m_device, m_vmaAllocator, m_object.m_geometry.m_indexBuffer, m_object.m_geometry.m_indexBufferAllocation);
 
-        destroyBuffer(m_device, m_vmaAllocator, m_geometry.m_vertexBuffer, m_geometry.m_vertexBufferAllocation);
+        destroyBuffer(m_device, m_vmaAllocator, m_object.m_geometry.m_vertexBuffer, m_object.m_geometry.m_vertexBufferAllocation);
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             vkDestroySemaphore(m_device, m_syncObjects.m_renderFinishedSemaphores[i], nullptr);
@@ -1610,8 +1623,7 @@ private:
         vkResetFences(device, 1, &syncObjects.m_inFlightFences[currentFrame]);
 
         vkResetCommandBuffer(commandBuffers[currentFrame],  0);
-        recordCommandBuffer(commandBuffers[currentFrame], imageIndex, swapChain
-            , renderPass, graphicsPipeline, geometry, descriptorSets, currentFrame);
+        recordCommandBuffer(commandBuffers[currentFrame], imageIndex, swapChain, renderPass, graphicsPipeline, geometry, descriptorSets, currentFrame);
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
