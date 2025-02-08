@@ -184,12 +184,6 @@ namespace std {
     };
 }
 
-struct UniformBufferObject {
-    alignas(16) glm::mat4 model;
-    alignas(16) glm::mat4 view;
-    alignas(16) glm::mat4 proj;
-};
-
 
 //--------------------------------------------------------------------------------------------------
 
@@ -271,12 +265,18 @@ private:
 
     VkDescriptorPool m_descriptorPool;
 
+	struct UniformBufferObject {
+		alignas(16) glm::mat4 model;
+		alignas(16) glm::mat4 view;
+		alignas(16) glm::mat4 proj;
+	};
+		
 	//This holds all information an object with texture needs!	
 	struct Object {
-		Texture m_texture;
-		Geometry m_geometry;
 		UniformBufferObject m_ubo; //holds model, view and proj matrix
 		UniformBuffers m_uniformBuffers;
+		Texture m_texture;
+		Geometry m_geometry;
 		std::vector<VkDescriptorSet> m_descriptorSets;
 	};
 
@@ -320,13 +320,23 @@ private:
         vmaCreateAllocator(&allocatorCreateInfo, &allocator);
     }
 
+	void createObject( VkPhysicalDevice physicalDevice, VkDevice device, VmaAllocator vmaAllocator, 
+			VkQueue graphicsQueue, VkCommandPool commandPool, VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorSetLayout,
+			glm::mat4&& model, std::string modelPath, std::string texturePath) {
+
+		Object object{{model}};
+		createTextureImage(physicalDevice, device, vmaAllocator, graphicsQueue, commandPool, texturePath, object.m_texture);
+        createTextureImageView(device, object.m_texture);
+        createTextureSampler(physicalDevice, device, object.m_texture);
+        loadModel(object.m_geometry, modelPath);
+        createVertexBuffer(physicalDevice, device, vmaAllocator, graphicsQueue, commandPool, object.m_geometry);
+        createIndexBuffer( physicalDevice, device, vmaAllocator, graphicsQueue, commandPool, object.m_geometry);
+        createUniformBuffers(physicalDevice, device, vmaAllocator, object.m_uniformBuffers);
+        createDescriptorSets(device, object.m_texture, descriptorSetLayout, object.m_uniformBuffers, descriptorPool, object.m_descriptorSets);
+		m_objects.push_back(object);
+	}
 
     void initVulkan() {
-		m_objects.resize(1);
-
-		m_objects[0].m_ubo.model = glm::mat4{1}; //glm::rotate(glm::mat4(1.0f), 0 * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		m_objects[0].m_ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
         createInstance(&m_instance, m_validationLayers);
         setupDebugMessenger(m_instance);
         createSurface(m_instance, m_surface);
@@ -341,16 +351,12 @@ private:
         createCommandPool(m_surface, m_physicalDevice, m_device, m_commandPool);
         createDepthResources(m_physicalDevice, m_device, m_vmaAllocator, m_swapChain, m_depthImage);
         createFramebuffers(m_device, m_swapChain, m_depthImage, m_renderPass);
-        createTextureImage(m_physicalDevice, m_device, m_vmaAllocator, m_graphicsQueue, m_commandPool, m_TEXTURE_PATH, m_objects[0].m_texture);
-        createTextureImageView(m_device, m_objects[0].m_texture);
-        createTextureSampler(m_physicalDevice, m_device, m_objects[0].m_texture);
-        loadModel(m_objects[0].m_geometry, m_MODEL_PATH);
-        createVertexBuffer(m_physicalDevice, m_device, m_vmaAllocator, m_graphicsQueue, m_commandPool, m_objects[0].m_geometry);
-        createIndexBuffer( m_physicalDevice, m_device, m_vmaAllocator, m_graphicsQueue, m_commandPool, m_objects[0].m_geometry);
-        createUniformBuffers(m_physicalDevice, m_device, m_vmaAllocator, m_objects[0].m_uniformBuffers);
         createDescriptorPool(m_device, m_descriptorPool);
-        createDescriptorSets(m_device, m_objects[0].m_texture, m_descriptorSetLayout, m_objects[0].m_uniformBuffers, m_descriptorPool, m_objects[0].m_descriptorSets);
-        createCommandBuffers(m_device, m_commandPool, m_commandBuffers);
+
+		createObject(m_physicalDevice, m_device, m_vmaAllocator, m_graphicsQueue, m_commandPool, 
+			m_descriptorPool, m_descriptorSetLayout, glm::mat4{1.0f}, m_MODEL_PATH, m_TEXTURE_PATH);
+	
+		createCommandBuffers(m_device, m_commandPool, m_commandBuffers);
         createSyncObjects(m_device, m_syncObjects);
         setupImgui(m_instance, m_physicalDevice, m_queueFamilies, m_device, m_graphicsQueue, m_commandPool
             , m_descriptorPool, m_renderPass);
