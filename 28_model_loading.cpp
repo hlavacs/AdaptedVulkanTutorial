@@ -280,7 +280,7 @@ private:
 		std::vector<VkDescriptorSet> m_descriptorSets;
 	};
 
-	Object m_object; 
+	std::vector<Object> m_objects;
 
     VkCommandPool m_commandPool;
     std::vector<VkCommandBuffer> m_commandBuffers;
@@ -322,6 +322,7 @@ private:
 
 
     void initVulkan() {
+		m_objects.resize(1);
         createInstance(&m_instance, m_validationLayers);
         setupDebugMessenger(m_instance);
         createSurface(m_instance, m_surface);
@@ -336,15 +337,15 @@ private:
         createCommandPool(m_surface, m_physicalDevice, m_device, m_commandPool);
         createDepthResources(m_physicalDevice, m_device, m_vmaAllocator, m_swapChain, m_depthImage);
         createFramebuffers(m_device, m_swapChain, m_depthImage, m_renderPass);
-        createTextureImage(m_physicalDevice, m_device, m_vmaAllocator, m_graphicsQueue, m_commandPool, m_TEXTURE_PATH, m_object.m_texture);
-        createTextureImageView(m_device, m_object.m_texture);
-        createTextureSampler(m_physicalDevice, m_device, m_object.m_texture);
-        loadModel(m_object.m_geometry, m_MODEL_PATH);
-        createVertexBuffer(m_physicalDevice, m_device, m_vmaAllocator, m_graphicsQueue, m_commandPool, m_object.m_geometry);
-        createIndexBuffer( m_physicalDevice, m_device, m_vmaAllocator, m_graphicsQueue, m_commandPool, m_object.m_geometry);
-        createUniformBuffers(m_physicalDevice, m_device, m_vmaAllocator, m_object.m_uniformBuffers);
+        createTextureImage(m_physicalDevice, m_device, m_vmaAllocator, m_graphicsQueue, m_commandPool, m_TEXTURE_PATH, m_objects[0].m_texture);
+        createTextureImageView(m_device, m_objects[0].m_texture);
+        createTextureSampler(m_physicalDevice, m_device, m_objects[0].m_texture);
+        loadModel(m_objects[0].m_geometry, m_MODEL_PATH);
+        createVertexBuffer(m_physicalDevice, m_device, m_vmaAllocator, m_graphicsQueue, m_commandPool, m_objects[0].m_geometry);
+        createIndexBuffer( m_physicalDevice, m_device, m_vmaAllocator, m_graphicsQueue, m_commandPool, m_objects[0].m_geometry);
+        createUniformBuffers(m_physicalDevice, m_device, m_vmaAllocator, m_objects[0].m_uniformBuffers);
         createDescriptorPool(m_device, m_descriptorPool);
-        createDescriptorSets(m_device, m_object.m_texture, m_descriptorSetLayout, m_object.m_uniformBuffers, m_descriptorPool, m_object.m_descriptorSets);
+        createDescriptorSets(m_device, m_objects[0].m_texture, m_descriptorSetLayout, m_objects[0].m_uniformBuffers, m_descriptorPool, m_objects[0].m_descriptorSets);
         createCommandBuffers(m_device, m_commandPool, m_commandBuffers);
         createSyncObjects(m_device, m_syncObjects);
         setupImgui(m_instance, m_physicalDevice, m_queueFamilies, m_device, m_graphicsQueue, m_commandPool
@@ -389,9 +390,8 @@ private:
 
                 drawFrame(m_sdlWindow, m_surface, m_physicalDevice, m_device, m_vmaAllocator
                     , m_graphicsQueue, m_presentQueue, m_swapChain, m_depthImage
-                    , m_renderPass, m_graphicsPipeline, m_object.m_geometry, m_commandBuffers
-                    , m_object.m_uniformBuffers, m_object.m_descriptorSets, m_syncObjects, m_currentFrame
-                    , m_framebufferResized);
+                    , m_renderPass, m_graphicsPipeline, m_objects, m_commandBuffers
+					, m_syncObjects, m_currentFrame, m_framebufferResized);
             }
         }
         vkDeviceWaitIdle(m_device);
@@ -426,22 +426,24 @@ private:
         vkDestroyRenderPass(m_device, m_renderPass, nullptr);
 
 
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            destroyBuffer(m_device, m_vmaAllocator, m_object.m_uniformBuffers.m_uniformBuffers[i], m_object.m_uniformBuffers.m_uniformBuffersAllocation[i]);
-        }
+		for( auto& object : m_objects) {
+	        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+	            destroyBuffer(m_device, m_vmaAllocator, object.m_uniformBuffers.m_uniformBuffers[i], object.m_uniformBuffers.m_uniformBuffersAllocation[i]);
+	        }
 
-        vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
+	        vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
 
-        vkDestroySampler(m_device, m_object.m_texture.m_textureSampler, nullptr);
-        vkDestroyImageView(m_device, m_object.m_texture.m_textureImageView, nullptr);
+	        vkDestroySampler(m_device, object.m_texture.m_textureSampler, nullptr);
+	        vkDestroyImageView(m_device, object.m_texture.m_textureImageView, nullptr);
 
-        destroyImage(m_device, m_vmaAllocator, m_object.m_texture.m_textureImage, m_object.m_texture.m_textureImageAllocation);
+	        destroyImage(m_device, m_vmaAllocator, object.m_texture.m_textureImage, object.m_texture.m_textureImageAllocation);
 
-        vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayout, nullptr);
+	        vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayout, nullptr);
 
-        destroyBuffer(m_device, m_vmaAllocator, m_object.m_geometry.m_indexBuffer, m_object.m_geometry.m_indexBufferAllocation);
+	        destroyBuffer(m_device, m_vmaAllocator, object.m_geometry.m_indexBuffer, object.m_geometry.m_indexBufferAllocation);
 
-        destroyBuffer(m_device, m_vmaAllocator, m_object.m_geometry.m_vertexBuffer, m_object.m_geometry.m_vertexBufferAllocation);
+	        destroyBuffer(m_device, m_vmaAllocator, object.m_geometry.m_vertexBuffer, object.m_geometry.m_vertexBufferAllocation);
+		}
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             vkDestroySemaphore(m_device, m_syncObjects.m_renderFinishedSemaphores[i], nullptr);
@@ -1493,7 +1495,8 @@ private:
 
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex
         , SwapChain& swapChain, VkRenderPass renderPass, Pipeline& graphicsPipeline
-        , Geometry& geometry, std::vector<VkDescriptorSet>& descriptorSets, uint32_t currentFrame) {
+        , std::vector<Object>& objects //Geometry& geometry, std::vector<VkDescriptorSet>& descriptorSets
+		, uint32_t currentFrame) {
 
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1534,17 +1537,18 @@ private:
             scissor.extent = swapChain.m_swapChainExtent;
             vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-            VkBuffer vertexBuffers[] = {geometry.m_vertexBuffer};
-            VkDeviceSize offsets[] = {0};
-            vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+			for( auto& object : objects ) {
+	            VkBuffer vertexBuffers[] = {object.m_geometry.m_vertexBuffer};
+	            VkDeviceSize offsets[] = {0};
+	            vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-            vkCmdBindIndexBuffer(commandBuffer, geometry.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+	            vkCmdBindIndexBuffer(commandBuffer, object.m_geometry.m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.m_pipelineLayout
-                , 0, 1, &descriptorSets[currentFrame], 0, nullptr);
+	            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.m_pipelineLayout
+	                , 0, 1, &object.m_descriptorSets[currentFrame], 0, nullptr);
 
-            vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(geometry.m_indices.size()), 1, 0, 0, 0);
-
+	            vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(object.m_geometry.m_indices.size()), 1, 0, 0, 0);
+			}
 
             //----------------------------------------------------------------------------------
             ImGui::Render();
@@ -1554,7 +1558,6 @@ private:
 
 
         vkCmdEndRenderPass(commandBuffer);
-
 
         if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
             throw std::runtime_error("failed to record command buffer!");
@@ -1582,27 +1585,28 @@ private:
         }
     }
 
-    void updateUniformBuffer(uint32_t currentImage, SwapChain& swapChain, UniformBuffers& uniformBuffers) {
+    void updateUniformBuffer(uint32_t currentImage, SwapChain& swapChain, std::vector<Object>& objects ) { 
         static auto startTime = std::chrono::high_resolution_clock::now();
 
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-        UniformBufferObject ubo{};
-        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.proj = glm::perspective(glm::radians(45.0f)
-            , swapChain.m_swapChainExtent.width / (float) swapChain.m_swapChainExtent.height, 0.1f, 10.0f);
-        ubo.proj[1][1] *= -1;
+		for( auto& object : objects ) {
+	        UniformBufferObject ubo{};
+	        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	        ubo.proj = glm::perspective(glm::radians(45.0f)
+	            , swapChain.m_swapChainExtent.width / (float) swapChain.m_swapChainExtent.height, 0.1f, 10.0f);
+	        ubo.proj[1][1] *= -1;
 
-        memcpy(uniformBuffers.m_uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+	        memcpy(object.m_uniformBuffers.m_uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+		}
     }
 
     void drawFrame(SDL_Window* window, VkSurfaceKHR surface, VkPhysicalDevice physicalDevice
         , VkDevice device, VmaAllocator vmaAllocator, VkQueue graphicsQueue, VkQueue presentQueue
-        , SwapChain& swapChain, DepthImage& depthImage, VkRenderPass renderPass
-        , Pipeline& graphicsPipeline, Geometry& geometry, std::vector<VkCommandBuffer>& commandBuffers
-        , UniformBuffers& uniformBuffers, std::vector<VkDescriptorSet>& descriptorSets
+        , SwapChain& swapChain, DepthImage& depthImage, VkRenderPass renderPass, Pipeline& graphicsPipeline 
+		, std::vector<Object>& objects, std::vector<VkCommandBuffer>& commandBuffers 
         , SyncObjects& syncObjects, uint32_t& currentFrame, bool& framebufferResized) {   
 
         vkWaitForFences(device, 1, &syncObjects.m_inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
@@ -1618,12 +1622,14 @@ private:
             throw std::runtime_error("failed to acquire swap chain image!");
         }
 
-        updateUniformBuffer(currentFrame, swapChain, uniformBuffers);
+        updateUniformBuffer(currentFrame, swapChain, objects); 
 
         vkResetFences(device, 1, &syncObjects.m_inFlightFences[currentFrame]);
 
         vkResetCommandBuffer(commandBuffers[currentFrame],  0);
-        recordCommandBuffer(commandBuffers[currentFrame], imageIndex, swapChain, renderPass, graphicsPipeline, geometry, descriptorSets, currentFrame);
+        recordCommandBuffer(commandBuffers[currentFrame], imageIndex, swapChain, renderPass, graphicsPipeline, 
+			objects, //[0].m_geometry, objects[0].m_descriptorSets, 
+			currentFrame);
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
