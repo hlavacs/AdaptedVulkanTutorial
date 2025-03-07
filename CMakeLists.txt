@@ -25,7 +25,17 @@ set(VULKAN $ENV{VULKAN_SDK}) #set to Vulkan SDK
 set(BUILD ${PROJECT_SOURCE_DIR}/build)  # engine include directory
 set(INCLUDE ${PROJECT_SOURCE_DIR}/include)  # engine include directory
 
-set(IMGUI C:/data/GitHub/ViennaVulkanEngine/extern/imgui)
+#--------------------------------- Fetch ImGui ---------------------------------#
+include(FetchContent) # enable Fetch Content
+
+FetchContent_Declare(imgui
+                     GIT_REPOSITORY https://github.com/ocornut/imgui.git 
+                     GIT_TAG master)
+FetchContent_MakeAvailable(Imgui)
+#include_directories (${imgui_SOURCE_DIR})
+#include_directories(${imgui_SOURCE_DIR}/backends)
+set(IMGUI ${imgui_SOURCE_DIR})
+
 set(TARGET 28_model_loading)
 
 set(SOURCE
