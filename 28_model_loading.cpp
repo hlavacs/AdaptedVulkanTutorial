@@ -59,9 +59,16 @@ const std::vector<const char*> m_validationLayers = {
 
 std::vector<const char*> m_sdl_instance_extensions = {};
 
+#ifdef __APPLE__
+const std::vector<const char*> m_deviceExtensions = {
+    "VK_KHR_swapchain",
+    "VK_KHR_portability_subset"
+};
+#else
 const std::vector<const char*> m_deviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
+#endif
 
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
@@ -178,7 +185,7 @@ namespace std {
 
     template<> struct hash<Vertex> {
         size_t operator()(Vertex const& vertex) const {
-            return ((hash<glm::vec3>()(vertex.pos) ^ (hash<glm::vec3>()(vertex.color) << 1)) >> 1) 
+            return ((hash<glm::vec3>()(vertex.pos) ^ (hash<glm::vec3>()(vertex.color) << 1)) >> 1)
                 ^ (hash<glm::vec2>()(vertex.texCoord) << 1);
         }
     };
@@ -270,8 +277,8 @@ private:
 		alignas(16) glm::mat4 view;
 		alignas(16) glm::mat4 proj;
 	};
-		
-	//This holds all information an object with texture needs!	
+
+	//This holds all information an object with texture needs!
 	struct Object {
 		UniformBufferObject m_ubo; //holds model, view and proj matrix
 		UniformBuffers m_uniformBuffers;
@@ -320,7 +327,7 @@ private:
         vmaCreateAllocator(&allocatorCreateInfo, &allocator);
     }
 
-	void createObject( VkPhysicalDevice physicalDevice, VkDevice device, VmaAllocator vmaAllocator, 
+	void createObject( VkPhysicalDevice physicalDevice, VkDevice device, VmaAllocator vmaAllocator,
 			VkQueue graphicsQueue, VkCommandPool commandPool, VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorSetLayout,
 			glm::mat4&& model, std::string modelPath, std::string texturePath, std::vector<Object>& objects) {
 
@@ -342,7 +349,7 @@ private:
         createSurface(m_instance, m_surface);
         pickPhysicalDevice(m_instance, m_deviceExtensions, m_surface, m_physicalDevice);
         createLogicalDevice(m_surface, m_physicalDevice, m_queueFamilies, m_validationLayers, m_deviceExtensions, m_device, m_graphicsQueue, m_presentQueue);
-        initVMA(m_instance, m_physicalDevice, m_device, m_vmaAllocator);  
+        initVMA(m_instance, m_physicalDevice, m_device, m_vmaAllocator);
         createSwapChain(m_surface, m_physicalDevice, m_device, m_swapChain);
         createImageViews(m_device, m_swapChain);
         createRenderPass(m_physicalDevice, m_device, m_swapChain, m_renderPass);
@@ -353,9 +360,9 @@ private:
         createFramebuffers(m_device, m_swapChain, m_depthImage, m_renderPass);
         createDescriptorPool(m_device, m_descriptorPool);
 
-		createObject(m_physicalDevice, m_device, m_vmaAllocator, m_graphicsQueue, m_commandPool, 
+		createObject(m_physicalDevice, m_device, m_vmaAllocator, m_graphicsQueue, m_commandPool,
 			m_descriptorPool, m_descriptorSetLayout, glm::mat4{1.0f}, m_MODEL_PATH, m_TEXTURE_PATH, m_objects);
-	
+
 		createCommandBuffers(m_device, m_commandPool, m_commandBuffers);
         createSyncObjects(m_device, m_syncObjects);
         setupImgui(m_instance, m_physicalDevice, m_queueFamilies, m_device, m_graphicsQueue, m_commandPool
@@ -376,11 +383,11 @@ private:
 
                 if (event.type == SDL_WINDOWEVENT) {
                     switch (event.window.event) {
-                    case SDL_WINDOWEVENT_MINIMIZED: 
+                    case SDL_WINDOWEVENT_MINIMIZED:
                         m_isMinimized = true;
                         break;
 
-                    case SDL_WINDOWEVENT_MAXIMIZED: 
+                    case SDL_WINDOWEVENT_MAXIMIZED:
                         m_isMinimized = false;
                         break;
 
@@ -483,7 +490,7 @@ private:
         , VkPhysicalDevice physicalDevice, VkDevice device, VmaAllocator vmaAllocator, SwapChain& swapChain
         , DepthImage& depthImage, VkRenderPass renderPass) {
         int width = 0, height = 0;
-        
+
         SDL_GetWindowSize(window, &width, &height);
         while (width == 0 || height == 0) {
             SDL_Event event;
@@ -515,10 +522,17 @@ private:
         appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.pEngineName = "Tutorial";
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+        #ifdef __APPLE__
+        appInfo.apiVersion = VK_API_VERSION_1_2;
+        #else
         appInfo.apiVersion = VK_API_VERSION_1_3;
+        #endif
 
         VkInstanceCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+        #ifdef __APPLE__
+		createInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR,
+		#endif
         createInfo.pApplicationInfo = &appInfo;
 
         auto extensions = getRequiredExtensions();
@@ -543,15 +557,15 @@ private:
         }
         _instance = *instance;
 
-   		volkLoadInstance(*instance);       
+   		volkLoadInstance(*instance);
     }
 
     void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
         createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT 
+        createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
             | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT 
+        createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
             | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         createInfo.pfnUserCallback = debugCallback;
     }
@@ -589,7 +603,7 @@ private:
             deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
             vkGetPhysicalDeviceProperties2(device, &deviceProperties2);
 
-            if (deviceProperties2.properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU 
+            if (deviceProperties2.properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
                 && isDeviceSuitable(device, deviceExtensions, surface)) {
 
                 physicalDevice = device;
@@ -873,7 +887,7 @@ private:
         depthStencil.stencilTestEnable = VK_FALSE;
 
         VkPipelineColorBlendAttachmentState colorBlendAttachment{};
-        colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT 
+        colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
             | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
         colorBlendAttachment.blendEnable = VK_FALSE;
 
@@ -996,7 +1010,7 @@ private:
     }
 
     VkFormat findDepthFormat(VkPhysicalDevice physicalDevice) {
-        return findSupportedFormat(physicalDevice, 
+        return findSupportedFormat(physicalDevice,
             {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
             VK_IMAGE_TILING_OPTIMAL,
             VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
@@ -1039,7 +1053,7 @@ private:
 
         createImage(physicalDevice, device, vmaAllocator, texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB
             , VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
-            , VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, texture.m_textureImage, texture.m_textureImageAllocation); 
+            , VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, texture.m_textureImage, texture.m_textureImageAllocation);
 
         transitionImageLayout(device, graphicsQueue, commandPool, texture.m_textureImage, VK_FORMAT_R8G8B8A8_SRGB
             , VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -1254,7 +1268,7 @@ private:
         VmaAllocation stagingBufferAllocation;
         VmaAllocationInfo allocInfo;
         createBuffer(physicalDevice, device, vmaAllocator, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-            , VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT 
+            , VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
             , VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT
             , stagingBuffer, stagingBufferAllocation, &allocInfo);
 
@@ -1279,7 +1293,7 @@ private:
         VmaAllocation stagingBufferAllocation;
         VmaAllocationInfo allocInfo;
         createBuffer(physicalDevice, device, vmaAllocator, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-            , VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT 
+            , VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
             , VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT
             , stagingBuffer, stagingBufferAllocation, &allocInfo);
 
@@ -1307,9 +1321,9 @@ private:
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             VmaAllocationInfo allocInfo;
             createBuffer(physicalDevice, device, vmaAllocator, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
-                , VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT 
+                , VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
                 , VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT
-                , uniformBuffers.m_uniformBuffers[i] 
+                , uniformBuffers.m_uniformBuffers[i]
                 , uniformBuffers.m_uniformBuffersAllocation[i], &allocInfo);
 
             uniformBuffers.m_uniformBuffersMapped[i] = allocInfo.pMappedData;
@@ -1413,7 +1427,7 @@ private:
         , VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties
         , VmaAllocationCreateFlags vmaFlags, VkBuffer& buffer
         , VmaAllocation& allocation, VmaAllocationInfo* allocationInfo = nullptr) {
-    
+
         VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
         bufferInfo.size = size;
         bufferInfo.usage = usage;
@@ -1429,7 +1443,7 @@ private:
 
         vmaDestroyBuffer(vmaAllocator, buffer, allocation);
     }
-    
+
 
     VkCommandBuffer beginSingleTimeCommands(VkDevice device, VkCommandPool commandPool) {
         VkCommandBufferAllocateInfo allocInfo{};
@@ -1595,7 +1609,7 @@ private:
         }
     }
 
-    void updateUniformBuffer(uint32_t currentImage, SwapChain& swapChain, std::vector<Object>& objects ) { 
+    void updateUniformBuffer(uint32_t currentImage, SwapChain& swapChain, std::vector<Object>& objects ) {
         static auto startTime = std::chrono::high_resolution_clock::now();
         auto currentTime = std::chrono::high_resolution_clock::now();
         float dt = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
@@ -1613,9 +1627,9 @@ private:
 
     void drawFrame(SDL_Window* window, VkSurfaceKHR surface, VkPhysicalDevice physicalDevice
         , VkDevice device, VmaAllocator vmaAllocator, VkQueue graphicsQueue, VkQueue presentQueue
-        , SwapChain& swapChain, DepthImage& depthImage, VkRenderPass renderPass, Pipeline& graphicsPipeline 
-		, std::vector<Object>& objects, std::vector<VkCommandBuffer>& commandBuffers 
-        , SyncObjects& syncObjects, uint32_t& currentFrame, bool& framebufferResized) {   
+        , SwapChain& swapChain, DepthImage& depthImage, VkRenderPass renderPass, Pipeline& graphicsPipeline
+		, std::vector<Object>& objects, std::vector<VkCommandBuffer>& commandBuffers
+        , SyncObjects& syncObjects, uint32_t& currentFrame, bool& framebufferResized) {
 
         vkWaitForFences(device, 1, &syncObjects.m_inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
@@ -1630,7 +1644,7 @@ private:
             throw std::runtime_error("failed to acquire swap chain image!");
         }
 
-        updateUniformBuffer(currentFrame, swapChain, objects); 
+        updateUniformBuffer(currentFrame, swapChain, objects);
 
         vkResetFences(device, 1, &syncObjects.m_inFlightFences[currentFrame]);
 
@@ -1834,6 +1848,13 @@ private:
         if (enableValidationLayers) {
             extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
+        #ifdef __APPLE__
+        enabledInstanceExtensions.push_back("VK_MVK_macos_surface");
+        // The next line is only required when using API_VERSION_1_0
+        // enabledInstanceExtensions.push_back("VK_KHR_get_physical_device_properties2");
+        enabledInstanceExtensions.push_back("VK_KHR_portability_enumeration");
+        #endif
+
         return extensions;
     }
 
@@ -1896,7 +1917,7 @@ private:
     void setupImgui(VkInstance instance, VkPhysicalDevice physicalDevice, QueueFamilyIndices queueFamilies
         , VkDevice device, VkQueue graphicsQueue, VkCommandPool commandPool, VkDescriptorPool descriptorPool
         , VkRenderPass renderPass) {
-            
+
         // Setup Dear ImGui context
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
