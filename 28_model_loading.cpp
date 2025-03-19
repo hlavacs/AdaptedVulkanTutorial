@@ -19,7 +19,7 @@
 #include <tiny_obj_loader.h>
 
 #define VOLK_IMPLEMENTATION
-#include "Volk/volk.h"
+#include "volk/volk.h"
 
 #define VMA_IMPLEMENTATION
 //#define VMA_STATIC_VULKAN_FUNCTIONS 0
@@ -1849,10 +1849,10 @@ private:
             extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
         #ifdef __APPLE__
-        enabledInstanceExtensions.push_back("VK_MVK_macos_surface");
+        extensions.push_back("VK_MVK_macos_surface");
         // The next line is only required when using API_VERSION_1_0
         // enabledInstanceExtensions.push_back("VK_KHR_get_physical_device_properties2");
-        enabledInstanceExtensions.push_back("VK_KHR_portability_enumeration");
+        extensions.push_back("VK_KHR_portability_enumeration");
         #endif
 
         return extensions;

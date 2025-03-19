@@ -23,3 +23,28 @@ You need two prerequisites:
 
 Only the CPP files are needed, no need to compile it.
 
+# Installing on MacOS
+
+1. **Install Dependencies:**
+   - **Xcode:** Make sure you have Xcode installed on your macOS. You can download it from the Mac App Store.
+   - **Homebrew:** If you don't have Homebrew installed, you can install it by running the following command in your terminal:
+     ```sh
+     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+     ```
+
+2. **Install Vulkan SDK:**
+   - Download the Vulkan SDK for macOS from the [LunarG website](https://vulkan.lunarg.com/sdk/home).
+   - Install it to a directory VulkanSDK in your home directory.
+
+3. **Install MoltenVK:**
+   - You can install MoltenVK using Homebrew:
+     ```sh
+     brew install moltenvk
+     ```
+
+4. **Set VULKAN_SDK**
+    - Edit .zprofile in your home directory to let VULKAN_SDK point to the VulkanSDK directory.
+    ```sh
+    export VULKAN_SDK="/Users/<YOURNAME>/VulkanSDK/1.4.309.0/macOS"
+    ```
+
