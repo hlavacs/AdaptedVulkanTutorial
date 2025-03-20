@@ -25,7 +25,7 @@
 
 #define VMA_IMPLEMENTATION
 //#define VMA_STATIC_VULKAN_FUNCTIONS 0
-//#define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
+#define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
 #include "vma/vk_mem_alloc.h"
 
 #define IMGUI_IMPL_VULKAN_USE_VOLK
@@ -359,6 +359,7 @@ private:
 
         vkb::InstanceBuilder builder;
         auto inst_ret = builder.set_app_name ("Adapted Vulkan Tutorial")
+							.require_api_version(VKB_VK_API_VERSION_1_1)
                             .request_validation_layers ()
                             .use_default_debug_messenger ()
                             .build ();
