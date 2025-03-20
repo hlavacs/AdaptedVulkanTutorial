@@ -17,6 +17,10 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
 	add_compile_options(-D IMGUI_IMPL_VULKAN_NO_PROTOTYPES)
 	add_compile_options(-Wno-nullability-completeness)
 	add_compile_options(-D_CRT_SECURE_NO_WARNINGS) #for assimp
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+	add_compile_options(-D IMGUI_IMPL_VULKAN_NO_PROTOTYPES)
+	add_compile_options(-Wno-nullability-completeness)
+	add_compile_options(-D_CRT_SECURE_NO_WARNINGS) #for assimp
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 	add_compile_options(-D IMGUI_IMPL_VULKAN_NO_PROTOTYPES)
 	add_compile_options(-Wno-nullability-completeness)
