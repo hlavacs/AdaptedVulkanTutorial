@@ -13,7 +13,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   	add_compile_options(/D IMGUI_IMPL_VULKAN_NO_PROTOTYPES)
 	add_compile_options(/D_CRT_SECURE_NO_WARNINGS) #for assimp
 	add_compile_options(/EHsc /std:c++20 /DEBUG /Zi /Istb) #for assimp
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
 	add_compile_options(-D IMGUI_IMPL_VULKAN_NO_PROTOTYPES)
 	add_compile_options(-Wno-nullability-completeness)
 	add_compile_options(-D_CRT_SECURE_NO_WARNINGS) #for assimp
@@ -28,16 +28,19 @@ if (WIN32)
 	set(SDKLIB Lib)
 	set(SDL2LIB SDL2.lib)
   	set(VOLKLIB volk.lib)
+  	set(VKBLIB vk-bootstrap.lib)
 elseif (APPLE)
 	set(SDKINCLUDE include)
     set(SDKLIB lib)
 	set(SDL2LIB libSDL2-2.0.dylib)
   	set(VOLKLIB libvolk.a)
+  	set(VKBLIB libvk-bootstrap.a)
 elseif (UNIX)
 	set(SDKINCLUDE include)
 	set(SDKLIB lib)
 	set(SDL2LIB libSDL2-2.0.a)
   	set(VOLKLIB libvolk.a)
+  	set(VKBLIB libvk-bootstrap.a)
 endif()
 
 find_package(Vulkan REQUIRED)
@@ -45,6 +48,7 @@ set(VULKAN $ENV{VULKAN_SDK}) #set to Vulkan SDK
 message("VULKAN SDK: " ${VULKAN})
 message("SDKINCLUDE: " ${SDKINCLUDE})
 message("SDKLIB: " ${SDKLIB})
+message("Compiler: " ${CMAKE_CXX_COMPILER_ID})
 
 set(BUILD ${PROJECT_SOURCE_DIR}/build)  # engine include directory
 set(INCLUDE ${PROJECT_SOURCE_DIR}/include)  # engine include directory
@@ -93,5 +97,5 @@ target_include_directories(${TARGET} PUBLIC ${vkbootstrap_SOURCE_DIR}/src)
 
 target_link_libraries (${TARGET} PUBLIC ${VULKAN}/${SDKLIB}/${SDL2LIB})
 target_link_libraries (${TARGET} PUBLIC ${VULKAN}/${SDKLIB}/${VOLKLIB})
-target_link_libraries (${TARGET} PUBLIC ${vkbootstrap_BINARY_DIR}/vk-bootstrap.lib)
+target_link_libraries (${TARGET} PUBLIC ${vkbootstrap_BINARY_DIR}/${VKBLIB})
 
