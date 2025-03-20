@@ -58,6 +58,12 @@ FetchContent_Declare(imgui
 FetchContent_MakeAvailable(Imgui)
 set(IMGUI ${imgui_SOURCE_DIR})
 
+FetchContent_Declare(vkbootstrap
+                     GIT_REPOSITORY https://github.com/charles-lunarg/vk-bootstrap.git 
+                     GIT_TAG main)
+FetchContent_MakeAvailable(vkbootstrap)
+
+
 set(TARGET 28_model_loading)
 
 set(SOURCE
@@ -83,7 +89,9 @@ target_include_directories(${TARGET} PUBLIC ${VULKAN}/${SDKINCLUDE}/glm)
 target_include_directories(${TARGET} PUBLIC ${VULKAN}/${SDKINCLUDE}/vma)
 target_include_directories(${TARGET} PUBLIC ${IMGUI})
 target_include_directories(${TARGET} PUBLIC ${IMGUI}/backends)
+target_include_directories(${TARGET} PUBLIC ${vkbootstrap_SOURCE_DIR}/src)
 
 target_link_libraries (${TARGET} PUBLIC ${VULKAN}/${SDKLIB}/${SDL2LIB})
 target_link_libraries (${TARGET} PUBLIC ${VULKAN}/${SDKLIB}/${VOLKLIB})
+target_link_libraries (${TARGET} PUBLIC ${vkbootstrap_BINARY_DIR}/vk-bootstrap.lib)
 

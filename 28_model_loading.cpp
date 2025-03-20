@@ -21,6 +21,8 @@
 #define VOLK_IMPLEMENTATION
 #include "volk.h"
 
+#include <VkBootstrap.h>
+
 #define VMA_IMPLEMENTATION
 //#define VMA_STATIC_VULKAN_FUNCTIONS 0
 //#define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
@@ -343,12 +345,64 @@ private:
 		objects.push_back(object);
 	}
 
-    void initVulkan() {
+
+    void initVulkanWOVkb() {
         createInstance(&m_instance, m_validationLayers);
         setupDebugMessenger(m_instance);
         createSurface(m_instance, m_surface);
         pickPhysicalDevice(m_instance, m_deviceExtensions, m_surface, m_physicalDevice);
         createLogicalDevice(m_surface, m_physicalDevice, m_queueFamilies, m_validationLayers, m_deviceExtensions, m_device, m_graphicsQueue, m_presentQueue);
+    }   
+    
+    void initVulkanVkb() {
+        volkInitialize();
+
+        vkb::InstanceBuilder builder;
+        auto inst_ret = builder.set_app_name ("Adapted Vulkan Tutorial")
+                            .request_validation_layers ()
+                            .use_default_debug_messenger ()
+                            .build ();
+        if (!inst_ret) { std::cerr << "Failed to create instance!\n"; exit(-1); }
+        vkb::Instance vkb_inst = inst_ret.value ();
+        m_instance = vkb_inst.instance;
+        _instance = m_instance;
+        volkLoadInstance(m_instance);
+
+        createSurface(m_instance, m_surface);
+
+        vkb::PhysicalDeviceSelector selector{ vkb_inst };
+        auto phys_ret = selector.set_surface (m_surface)
+                            .set_minimum_version (1, 1)
+                            .require_dedicated_transfer_queue ()
+                            .select ();
+        if (!phys_ret) { std::cerr << "Failed to select a physical device!\n"; exit(-1); }
+        m_physicalDevice = phys_ret.value ();
+    
+        vkb::DeviceBuilder device_builder{ phys_ret.value () };
+        auto dev_ret = device_builder.build ();
+        if (!dev_ret) { std::cerr << "Failed to create logical device!\n"; exit(-1); }
+        vkb::Device vkb_device = dev_ret.value ();
+        m_device = vkb_device.device;
+        volkLoadDevice(m_device);
+
+        auto graphics_queue_ret = vkb_device.get_queue (vkb::QueueType::graphics);
+        if (!graphics_queue_ret)  { std::cerr << "Failed to get graphics queue!\n"; exit(-1); }
+        m_graphicsQueue = graphics_queue_ret.value (); 
+        m_queueFamilies.graphicsFamily = vkb_device.get_queue_index (vkb::QueueType::graphics).value();
+
+        auto present_queue_ret = vkb_device.get_queue (vkb::QueueType::present);
+        if (!graphics_queue_ret)  { std::cerr << "Failed to get present queue!\n"; exit(-1); }
+        m_presentQueue = present_queue_ret.value ();
+        m_queueFamilies.presentFamily = m_queueFamilies.graphicsFamily = vkb_device.get_queue_index (vkb::QueueType::present).value();
+
+    }
+
+
+    void initVulkan() {
+
+        //initVulkanVkb();
+        initVulkanWOVkb();
+
         initVMA(m_instance, m_physicalDevice, m_device, m_vmaAllocator);
         createSwapChain(m_surface, m_physicalDevice, m_device, m_swapChain);
         createImageViews(m_device, m_swapChain);
