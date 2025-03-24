@@ -1,105 +1,86 @@
 cmake_minimum_required (VERSION 3.5.0)
 project (
-  "28_model_loading"
-  VERSION 2.0.0
-  DESCRIPTION "A game engine using the Vulkan API"
-  LANGUAGES CXX
+    "28_model_loading"
+    VERSION 2.0.0
+    DESCRIPTION "A game engine using the Vulkan API"
+    LANGUAGES CXX
 )
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-  	add_compile_options(/D IMGUI_IMPL_VULKAN_NO_PROTOTYPES)
-	add_compile_options(/D_CRT_SECURE_NO_WARNINGS) #for assimp
-	add_compile_options(/EHsc /std:c++20 /DEBUG /Zi /Istb) #for assimp
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
-	add_compile_options(-D IMGUI_IMPL_VULKAN_NO_PROTOTYPES)
-	add_compile_options(-Wno-nullability-completeness)
-	add_compile_options(-D_CRT_SECURE_NO_WARNINGS) #for assimp
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-	add_compile_options(-D IMGUI_IMPL_VULKAN_NO_PROTOTYPES)
-	add_compile_options(-Wno-nullability-completeness)
-	add_compile_options(-D_CRT_SECURE_NO_WARNINGS) #for assimp
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-	add_compile_options(-D IMGUI_IMPL_VULKAN_NO_PROTOTYPES)
-	add_compile_options(-Wno-nullability-completeness)
-	add_compile_options(-D_CRT_SECURE_NO_WARNINGS) #for assimp
-endif()
-
-if (WIN32)
-	set(SDKINCLUDE Include)
-	set(SDKLIB Lib)
-	set(SDL2LIB SDL2.lib)
-  	set(VOLKLIB volk.lib)
-  	set(VKBLIB vk-bootstrap.lib)
-elseif (APPLE)
-	set(SDKINCLUDE include)
-    set(SDKLIB lib)
-	set(SDL2LIB libSDL2-2.0.dylib)
-  	set(VOLKLIB libvolk.a)
-  	set(VKBLIB libvk-bootstrap.a)
-elseif (UNIX)
-	set(SDKINCLUDE include)
-	set(SDKLIB lib)
-	set(SDL2LIB libSDL2-2.0.a)
-  	set(VOLKLIB libvolk.a)
-  	set(VKBLIB libvk-bootstrap.a)
-endif()
-
-find_package(Vulkan REQUIRED)
-set(VULKAN $ENV{VULKAN_SDK}) #set to Vulkan SDK
-message("VULKAN SDK: " ${VULKAN})
-message("SDKINCLUDE: " ${SDKINCLUDE})
-message("SDKLIB: " ${SDKLIB})
 message("Compiler: " ${CMAKE_CXX_COMPILER_ID})
 
-set(BUILD ${PROJECT_SOURCE_DIR}/build)  # engine include directory
-set(INCLUDE ${PROJECT_SOURCE_DIR}/include)  # engine include directory
+add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    add_compile_options(-Wno-nullability-completeness)
+endif()
+
+#--------------------------------- Find VulkanSDK ---------------------------------#
+find_package(Vulkan REQUIRED)
+message("Vulkan_INCLUDE_DIR: " ${Vulkan_INCLUDE_DIR})
+
+#--------------------------------- Find SDL2 ---------------------------------#
+set(VULKAN $ENV{VULKAN_SDK}) #set to Vulkan SDK; needed to find SDL2 if installed with Vulkan SDK
+message("VULKAN SDK: " ${VULKAN})
+if (APPLE)
+    # Vulkan SDK on Mac does not provide SDL2Config.cmake
+    add_library(SDL2::SDL2 SHARED IMPORTED)
+    set_target_properties(SDL2::SDL2 PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES ${VULKAN}/include/SDL2
+        IMPORTED_LOCATION ${VULKAN}/lib/libSDL2-2.0.dylib
+    )
+else()
+    # search SDL2 in Vulkan SDK and system packages
+    list(APPEND CMAKE_PREFIX_PATH ${VULKAN})
+    find_package(SDL2 REQUIRED)
+endif()
+# available now as SDL2::SDL2
 
 #--------------------------------- Fetch ImGui ---------------------------------#
 include(FetchContent) # enable Fetch Content
-
 FetchContent_Declare(imgui
                      GIT_REPOSITORY https://github.com/ocornut/imgui.git 
                      GIT_TAG master)
-FetchContent_MakeAvailable(Imgui)
-set(IMGUI ${imgui_SOURCE_DIR})
 
+FetchContent_MakeAvailable(Imgui)
+# ImGui does not provide CMakeLists.txt
+add_library(imgui)
+target_include_directories(imgui SYSTEM PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
+target_include_directories(imgui SYSTEM PRIVATE ${Vulkan_INCLUDE_DIRS})
+target_compile_definitions(imgui PRIVATE IMGUI_IMPL_VULKAN_NO_PROTOTYPES)
+target_link_libraries(imgui SDL2::SDL2)
+target_sources(imgui PRIVATE
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_demo.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp
+)
+# available now as imgui
+
+#--------------------------------- Fetch vk-bootstrap ---------------------------------#
 FetchContent_Declare(vkbootstrap
                      GIT_REPOSITORY https://github.com/charles-lunarg/vk-bootstrap.git 
                      GIT_TAG main)
 FetchContent_MakeAvailable(vkbootstrap)
+# available now as vk-bootstrap::vk-bootstrap
 
-
+#--------------------------------- Main Target ---------------------------------#
 set(TARGET 28_model_loading)
 
 set(SOURCE
-  ${IMGUI}/imgui.cpp
-  ${IMGUI}/imgui_demo.cpp
-  ${IMGUI}/imgui_draw.cpp
-  ${IMGUI}/backends/imgui_impl_sdl2.cpp
-  ${IMGUI}/backends/imgui_impl_vulkan.cpp
-  ${IMGUI}/imgui_tables.cpp
-  ${IMGUI}/imgui_widgets.cpp
-  28_model_loading.cpp
-  )
+    28_model_loading.cpp
+)
 
 set(HEADERS )
 
 add_executable(${TARGET} ${SOURCE} ${HEADERS})
 
-target_include_directories(${TARGET} PUBLIC stb)
-target_include_directories(${TARGET} PUBLIC ${VULKAN}/${SDKINCLUDE})
-target_include_directories(${TARGET} PUBLIC ${VULKAN}/${SDKINCLUDE}/SDL2)
-target_include_directories(${TARGET} PUBLIC ${VULKAN}/${SDKINCLUDE}/volk)
-target_include_directories(${TARGET} PUBLIC ${VULKAN}/${SDKINCLUDE}/glm)
-target_include_directories(${TARGET} PUBLIC ${VULKAN}/${SDKINCLUDE}/vma)
-target_include_directories(${TARGET} PUBLIC ${IMGUI})
-target_include_directories(${TARGET} PUBLIC ${IMGUI}/backends)
-target_include_directories(${TARGET} PUBLIC ${vkbootstrap_SOURCE_DIR}/src)
-
-target_link_libraries (${TARGET} PUBLIC ${VULKAN}/${SDKLIB}/${SDL2LIB})
-target_link_libraries (${TARGET} PUBLIC ${VULKAN}/${SDKLIB}/${VOLKLIB})
-target_link_libraries (${TARGET} PUBLIC ${vkbootstrap_BINARY_DIR}/${VKBLIB})
-
+target_include_directories(${TARGET} PRIVATE stb)
+target_include_directories(${TARGET} PRIVATE ${Vulkan_INCLUDE_DIR}/volk)
+target_include_directories(${TARGET} PRIVATE ${Vulkan_INCLUDE_DIR}/vma)
+target_include_directories(${TARGET} SYSTEM PRIVATE ${Vulkan_INCLUDE_DIRS})
+target_link_libraries(${TARGET} PRIVATE SDL2::SDL2 vk-bootstrap::vk-bootstrap imgui)

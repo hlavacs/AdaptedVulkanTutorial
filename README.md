@@ -67,6 +67,24 @@ On Windows compile using MSVC and the compile.cmd file. Make sure to first clone
    - Use cmake directly to configure and compile
    - Or use MS Visual Studio Code, see below (recommended).
 
+# Installing on Linux
+
+1. **Install Dependencies:**  
+   On Ubuntu 24.10 you need following packages (install using `apt`):  
+   `build-essential git cmake libvulkan-dev vulkan-validationlayers libsdl2-dev libglm-dev libvulkan-volk-dev libvulkan-memory-allocator-dev`  
+   If you use another distribution please install equivalent packages.
+
+2. **Configure and Compile**  
+   ```sh
+   cmake -B build
+   cmake --build build
+   ```
+
+3. **Run**
+   ```sh
+   build/28_model_loading
+   ```
+
 # Using MS Visual Studio Code
 
 If you want to use MS Visual Studio Code (available for most platforms), install it for your platform. Also install the extensions Cmake an Cmake Tools. Then you can access all cmake features by clicking on Menu View / Command Palette... and enter cmake. You will be presented the cmake options which you can choose from in this sequence:
