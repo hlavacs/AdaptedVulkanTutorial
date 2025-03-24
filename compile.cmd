@@ -1,6 +1,6 @@
 
 set IMGUI="C:\data\GitHub\ViennaVulkanEngine\extern\imgui"
-echo %IMGUI%
+set VKBOOTSTRAP="C:\data\vkbootstrap"
 set VULKAN=%VULKAN_SDK%
 rem set VULKAN="C:\VulkanSDK\
 echo %VULKAN%
@@ -18,6 +18,8 @@ cl 28_model_loading.cpp ^
     /I%VULKAN%\include ^
     /I%VULKAN%\include\SDL2 ^
     /I%VULKAN%\include\volk ^
+    /I%VULKAN%\include\vma ^
+    /I%VKBOOTSTRAP%\src ^
     %VULKAN%\Lib\SDL2.lib ^
     %VULKAN%\Lib\volk.lib ^
     /link /SUBSYSTEM:CONSOLE /OUT:28_model_loading.exe
