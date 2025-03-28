@@ -1,6 +1,6 @@
 
-set IMGUI="C:\data\GitHub\ViennaVulkanEngine\extern\imgui"
-set VKBOOTSTRAP="C:\data\vkbootstrap"
+set IMGUI="C:\data\GitHub\imgui"
+set VKBOOTSTRAP="C:\data\GitHub\vkbootstrap"
 set VULKAN=%VULKAN_SDK%
 rem set VULKAN="C:\VulkanSDK\
 echo %VULKAN%

@@ -19,6 +19,7 @@ You need these tools for compiling:
 * When using CMake, Imgui is automatically fetched from the Git repo (usually to build/_deps/imgui-src), no need to clone it.
 * When using the script on Windows, you need to clone the ImGUI repo (https://github.com/ocornut/imgui) into some directory. In the file *compile.cmd* set the ImGUI variable to this directory. 
 * Only the ImGUI CPP files are needed, no need to compile it.
+* Do the same for vk-bootstrap (https://github.com/charles-lunarg/vk-bootstrap).
 
 ## Compiling using CMake
 
@@ -32,9 +33,9 @@ build\Debug\28_model_loading.exe
 
 Here you do not need to install ImGUI manually, since Cmake will download it automatically. 
 
-## Compiling with the Script
+## Compiling with the Windows Script
 
-On Windows compile using MSVC and the compile.cmd file. Make sure to first clone the ImGUI repo and edit the script to let point the IMGUI variable to its directory. Then run the script.
+On Windows compile using MSVC and the compile.cmd file. Make sure to first clone the ImGUI repo and edit the script to let point the IMGUI variable to its directory. Do this also for vk-bootstrap. Then run the script.
 
 
 # Installing on MacOS
