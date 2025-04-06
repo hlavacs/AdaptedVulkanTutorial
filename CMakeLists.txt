@@ -37,8 +37,20 @@ else()
 endif()
 # available now as SDL2::SDL2
 
-#--------------------------------- Fetch ImGui ---------------------------------#
+#--------------------------------- Fetch necessary Git repos ---------------------------------#
+
 include(FetchContent) # enable Fetch Content
+
+#--------------------------------- Fetch SDL3 ---------------------------------#
+set(SDL_STATIC true)
+FetchContent_Declare(sdl3
+                     GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+                     GIT_TAG main
+)
+FetchContent_MakeAvailable(sdl3)
+include_directories (${sdl3_SOURCE_DIR}/include)
+
+#--------------------------------- Fetch ImGui ---------------------------------#
 FetchContent_Declare(imgui
                      GIT_REPOSITORY https://github.com/ocornut/imgui.git 
                      GIT_TAG master)
@@ -68,7 +80,24 @@ FetchContent_Declare(vkbootstrap
 FetchContent_MakeAvailable(vkbootstrap)
 # available now as vk-bootstrap::vk-bootstrap
 
+#--------------------------------- Fetch glm ---------------------------------#
+
+FetchContent_Declare(glm
+                     GIT_REPOSITORY https://github.com/g-truc/glm.git 
+                     GIT_TAG master)
+FetchContent_MakeAvailable(glm)
+include_directories(${glm_SOURCE_DIR}/src)
+
+#--------------------------------- Fetch slang ---------------------------------#
+
+#FetchContent_Declare(slang
+#                     GIT_REPOSITORY https://github.com/shader-slang/slang.git
+#                     GIT_TAG master)
+#FetchContent_MakeAvailable(slang)
+#include_directories(${slang_SOURCE_DIR}/src)
+
 #--------------------------------- Main Target ---------------------------------#
+
 set(TARGET 28_model_loading)
 
 set(SOURCE
@@ -84,3 +113,5 @@ target_include_directories(${TARGET} PRIVATE ${Vulkan_INCLUDE_DIR}/volk)
 target_include_directories(${TARGET} PRIVATE ${Vulkan_INCLUDE_DIR}/vma)
 target_include_directories(${TARGET} SYSTEM PRIVATE ${Vulkan_INCLUDE_DIRS})
 target_link_libraries(${TARGET} PRIVATE SDL2::SDL2 vk-bootstrap::vk-bootstrap imgui)
+
+
