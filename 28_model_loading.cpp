@@ -3,8 +3,8 @@
 //#include "vulkan/vulkan.h"
 
 #define SDL_MAIN_HANDLED
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_vulkan.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_vulkan.h>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -30,7 +30,7 @@
 
 #define IMGUI_IMPL_VULKAN_USE_VOLK
 #include "imgui.h"
-#include "backends/imgui_impl_sdl2.h"
+#include "backends/imgui_impl_sdl3.h"
 #include "backends/imgui_impl_vulkan.h"
 
 
@@ -305,13 +305,13 @@ private:
 
 
     void initWindow() {
-        SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER);
+        SDL_Init(SDL_INIT_VIDEO);
         #ifdef SDL_HINT_IME_SHOW_UI
             SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
         #endif
 
-        SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-        m_sdlWindow = SDL_CreateWindow("Tutorial", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, window_flags);
+        SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE );
+        m_sdlWindow = SDL_CreateWindow("Tutorial", 800, 600, window_flags);
     }
 
     void initVMA(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, VmaAllocator& allocator) {
@@ -431,31 +431,31 @@ private:
 
         while (!m_quit) {
             while (SDL_PollEvent(&event)) {
-                ImGui_ImplSDL2_ProcessEvent(&event); // Forward your event to backend
+                ImGui_ImplSDL3_ProcessEvent(&event); // Forward your event to backend
 
-                if (event.type == SDL_QUIT || event.window.event == SDL_WINDOWEVENT_CLOSE )
-                    m_quit = true;
+                switch (event.type) {
+                    case SDL_EVENT_QUIT:
+                    case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+                        m_quit = true;
+                        break;
 
-                if (event.type == SDL_WINDOWEVENT) {
-                    switch (event.window.event) {
-                    case SDL_WINDOWEVENT_MINIMIZED:
+                    case SDL_EVENT_WINDOW_MINIMIZED:
                         m_isMinimized = true;
                         break;
 
-                    case SDL_WINDOWEVENT_MAXIMIZED:
+                    case SDL_EVENT_WINDOW_MAXIMIZED:
                         m_isMinimized = false;
                         break;
 
-                    case SDL_WINDOWEVENT_RESTORED:
+                    case SDL_EVENT_WINDOW_RESTORED:
                         m_isMinimized = false;
                         break;
-                    }
                 }
             }
 
             if(!m_isMinimized) {
                 ImGui_ImplVulkan_NewFrame();
-                ImGui_ImplSDL2_NewFrame();
+                ImGui_ImplSDL3_NewFrame();
                 ImGui::NewFrame();
 
                 ImGui::ShowDemoWindow(); // Show demo window! :)
@@ -488,7 +488,7 @@ private:
     void cleanup() {
 
         ImGui_ImplVulkan_Shutdown();
-        ImGui_ImplSDL2_Shutdown();
+        ImGui_ImplSDL3_Shutdown();
         ImGui::DestroyContext();
 
         cleanupSwapChain(m_device, m_vmaAllocator, m_swapChain, m_depthImage);
@@ -637,7 +637,7 @@ private:
     }
 
     void createSurface(VkInstance instance, VkSurfaceKHR& surface) {
-        if (SDL_Vulkan_CreateSurface(m_sdlWindow, instance, &surface) == 0) {
+        if (SDL_Vulkan_CreateSurface(m_sdlWindow, instance, nullptr, &surface) == 0) {
             printf("Failed to create Vulkan surface.\n");
         }
     }
@@ -1882,9 +1882,12 @@ private:
     std::vector<const char*> getRequiredExtensions() {
         uint32_t extensions_count = 0;
         std::vector<const char*> extensions;
-        SDL_Vulkan_GetInstanceExtensions(m_sdlWindow, &extensions_count, nullptr);
-        extensions.resize(extensions_count);
-        SDL_Vulkan_GetInstanceExtensions(m_sdlWindow, &extensions_count, extensions.data());
+        
+        auto ext = SDL_Vulkan_GetInstanceExtensions(&extensions_count);
+        for( int i=0; i<extensions_count; ++i) {
+            extensions.push_back(ext[i]);
+        }
+
         if (enableValidationLayers) {
             extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
@@ -1969,7 +1972,7 @@ private:
         ImGui_ImplVulkan_LoadFunctions( VK_API_VERSION_1_0, &loadVolk );
 
         // Setup Platform/Renderer backends
-        ImGui_ImplSDL2_InitForVulkan(m_sdlWindow);
+        ImGui_ImplSDL3_InitForVulkan(m_sdlWindow);
 
         ImGui_ImplVulkan_InitInfo init_info = {};
         init_info.Instance = instance;
